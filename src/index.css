@@ -1,0 +1,18 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  }
+
+  /* High contrast focus ring for accessibility */
+  *:focus-visible {
+    outline: 2px solid #f59e0b;
+    outline-offset: 3px;
+  }
+}
+
+/* Tabular numerals for spatial telemetry & confidence metrics */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
