@@ -28,6 +28,8 @@ export interface DetectedSpatialObject {
   azimuthAngleDeg: number; // -90 deg to +90 deg
   azimuthLabel: 'Far Left' | 'Left' | 'Center' | 'Right' | 'Far Right';
   estimatedProximityRatio: number; // 0 (distant) to 1 (immediate proximity)
+  approxDistanceMeters: number; // estimated distance in meters
+  distanceDescription: string; // e.g. "about 2 meters" or "under 1 meter"
   urgency: UrgencyLevel;
   lastNotifiedAt?: number;
 }
@@ -41,6 +43,8 @@ export interface SpatialAudioEvent {
   azimuthLabel: string;
   urgency: UrgencyLevel;
   proximityRatio: number;
+  approxDistanceMeters?: number;
+  distanceDescription?: string;
   source: 'camera' | 'diagnostic' | 'simulation';
   soundDescription: string;
 }
@@ -53,6 +57,7 @@ export interface AudioSettings {
   speechLabelsEnabled: boolean; // Spoken voice cues
   hapticEnabled: boolean;      // Device vibration feedback
   soundTheme: SoundTheme;
+  distanceUnit: 'meters' | 'feet'; // measurement unit for spoken prompts
   highContrastMode: boolean;
   largeTextMode: boolean;
 }

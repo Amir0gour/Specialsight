@@ -91,13 +91,19 @@ class ObjectDetectionService {
           // Visual proximity normalized (0 = distant, 1 = immediate collision threat)
           const proximityRatio = Math.min(1, Math.sqrt(areaRatio) * 1.6);
 
+          // Approximate Distance estimation based on optical pinhole model
+          const { meters: approxDistanceMeters, description: distanceDescription } = this.estimateDistance(
+            pred.class,
+            normH
+          );
+
           const category = this.categorizeClass(pred.class, pred.score);
 
-          // Urgency assessment
+          // Urgency assessment based on proximity and threat tier
           let urgency: UrgencyLevel = 'informational';
-          if (areaRatio > 0.30 || (category === 'vehicle' && areaRatio > 0.12) || (category === 'hazard' && areaRatio > 0.15)) {
+          if (areaRatio > 0.30 || approxDistanceMeters < 1.2 || (category === 'vehicle' && areaRatio > 0.12) || (category === 'hazard' && areaRatio > 0.15)) {
             urgency = 'high_priority';
-          } else if (areaRatio > 0.09 || (category === 'person' && areaRatio > 0.06)) {
+          } else if (areaRatio > 0.09 || approxDistanceMeters < 2.5 || (category === 'person' && areaRatio > 0.06)) {
             urgency = 'attention';
           }
 
@@ -116,6 +122,8 @@ class ObjectDetectionService {
             azimuthAngleDeg,
             azimuthLabel,
             estimatedProximityRatio: proximityRatio,
+            approxDistanceMeters,
+            distanceDescription,
             urgency,
           };
         });
@@ -129,7 +137,7 @@ class ObjectDetectionService {
         };
         const pDiff = priorityOrder[b.urgency] - priorityOrder[a.urgency];
         if (pDiff !== 0) return pDiff;
-        return b.estimatedProximityRatio - a.estimatedProximityRatio;
+        return a.approxDistanceMeters - b.approxDistanceMeters;
       });
     } catch (err) {
       console.error('Frame inference error:', err);
@@ -151,6 +159,59 @@ class ObjectDetectionService {
     if (['traffic light', 'stop sign', 'fire hydrant'].includes(cls)) return 'hazard';
 
     return 'obstacle';
+  }
+
+  public estimateDistance(rawClass: string, normH: number): { meters: number; description: string } {
+    const cls = rawClass.toLowerCase();
+    let realHeightMeters = 0.8; // default obstacle height in meters
+
+    if (cls === 'person') {
+      realHeightMeters = 1.7;
+    } else if (cls === 'chair') {
+      realHeightMeters = 0.85;
+    } else if (['dining table', 'desk'].includes(cls)) {
+      realHeightMeters = 0.75;
+    } else if (['couch', 'sofa'].includes(cls)) {
+      realHeightMeters = 0.85;
+    } else if (cls === 'bed') {
+      realHeightMeters = 0.75;
+    } else if (['car', 'truck', 'bus'].includes(cls)) {
+      realHeightMeters = 1.5;
+    } else if (['bicycle', 'motorcycle'].includes(cls)) {
+      realHeightMeters = 1.1;
+    } else if (['door', 'exit', 'entrance'].includes(cls)) {
+      realHeightMeters = 2.0;
+    } else if (['bottle', 'cup'].includes(cls)) {
+      realHeightMeters = 0.25;
+    } else if (['backpack', 'handbag', 'suitcase'].includes(cls)) {
+      realHeightMeters = 0.5;
+    } else if (cls === 'potted plant') {
+      realHeightMeters = 0.6;
+    }
+
+    // Optical focal approximation: d = (realHeight * 0.85) / normH
+    const safeH = Math.max(0.06, normH);
+    const rawDist = (realHeightMeters * 0.85) / safeH;
+    const meters = Math.max(0.4, Math.min(8.0, Math.round(rawDist * 10) / 10));
+
+    let description = 'about 2 meters';
+    if (meters < 0.8) {
+      description = 'under 1 meter';
+    } else if (meters < 1.3) {
+      description = 'about 1 meter';
+    } else if (meters < 1.8) {
+      description = 'about 1 and a half meters';
+    } else if (meters < 2.5) {
+      description = 'about 2 meters';
+    } else if (meters < 3.5) {
+      description = 'about 3 meters';
+    } else if (meters < 4.8) {
+      description = 'about 4 meters';
+    } else {
+      description = 'over 5 meters';
+    }
+
+    return { meters, description };
   }
 
   private formatLabel(rawClass: string): string {

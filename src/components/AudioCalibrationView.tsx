@@ -94,8 +94,26 @@ export const AudioCalibrationView: React.FC<AudioCalibrationViewProps> = ({
 
   const triggerCatalogSound = (category: CueCategory) => {
     setPlayingCategory(category);
-    // Play slightly centered or slightly left for preview
-    spatialAudio.playSpatialCue(category, 0.0, 0.6, 'attention');
+    let demoLabel = 'Obstacle';
+    let demoDist = 'about 2 meters';
+    if (category === 'furniture') {
+      demoLabel = 'Chair';
+      demoDist = 'about 2 meters';
+    } else if (category === 'person') {
+      demoLabel = 'Person';
+      demoDist = 'about 1 meter';
+    } else if (category === 'doorway') {
+      demoLabel = 'Doorway';
+      demoDist = 'about 3 meters';
+    } else if (category === 'hazard') {
+      demoLabel = 'Hazard';
+      demoDist = 'under 1 meter';
+    } else if (category === 'uncertain') {
+      demoLabel = 'Ambiguous shape';
+      demoDist = 'about 4 meters';
+    }
+
+    spatialAudio.playSpatialCue(category, 0.0, 0.6, 'attention', demoLabel, demoDist);
     setTimeout(() => {
       setPlayingCategory(null);
     }, 700);

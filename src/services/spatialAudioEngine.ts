@@ -114,7 +114,8 @@ class SpatialAudioEngine {
     azimuth: number, // -1.0 to 1.0
     proximity: number = 0.5, // 0.0 to 1.0
     urgency: UrgencyLevel = 'informational',
-    label?: string
+    label?: string,
+    distanceDescription?: string
   ): void {
     if (this.isMuted || this.masterVolume <= 0.01) return;
 
@@ -157,9 +158,9 @@ class SpatialAudioEngine {
           break;
       }
 
-      // Optional Speech narration
+      // Spoken voice narration (e.g., "Chair ahead, about 2 meters")
       if (this.speechLabelsEnabled && label) {
-        this.speakLabel(label, azimuth, urgency);
+        this.speakLabel(label, azimuth, urgency, distanceDescription);
       }
     } catch (err) {
       console.error('Failed to play spatial cue:', err);
@@ -322,30 +323,41 @@ class SpatialAudioEngine {
 
   /**
    * Spoken speech narration for accessibility (Web Speech API).
+   * E.g.: "Chair ahead, about 2 meters" or "Person on your left, about 1 meter"
    */
-  private speakLabel(label: string, azimuth: number, urgency: UrgencyLevel): void {
+  private speakLabel(
+    label: string,
+    azimuth: number,
+    urgency: UrgencyLevel,
+    distanceDescription?: string
+  ): void {
     if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
 
     const now = Date.now();
-    // Debounce speech to avoid overwhelming voice chatter
-    const minSpeechInterval = urgency === 'high_priority' ? 1200 : 2500;
+    // Debounce speech to avoid overwhelming voice chatter (1.4s for urgent, 2.0s for attention)
+    const minSpeechInterval = urgency === 'high_priority' ? 1400 : 2000;
     if (now - this.lastSpeechTimestamp < minSpeechInterval) return;
 
     this.lastSpeechTimestamp = now;
 
     let dirWord = 'ahead';
-    if (azimuth < -0.45) dirWord = 'far left';
-    else if (azimuth < -0.15) dirWord = 'left';
-    else if (azimuth > 0.45) dirWord = 'far right';
-    else if (azimuth > 0.15) dirWord = 'right';
+    if (azimuth < -0.45) dirWord = 'on your far left';
+    else if (azimuth < -0.15) dirWord = 'on your left';
+    else if (azimuth > 0.45) dirWord = 'on your far right';
+    else if (azimuth > 0.15) dirWord = 'on your right';
 
-    const utteranceText = `${label}, ${dirWord}`;
+    // Construct clear, natural accessibility announcement
+    let utteranceText = `${label} ${dirWord}`;
+    if (distanceDescription) {
+      utteranceText = `${label} ${dirWord}, ${distanceDescription}`;
+    }
+
     const utterance = new SpeechSynthesisUtterance(utteranceText);
-    utterance.rate = 1.15; // Slightly brisk for rapid spatial awareness
-    utterance.volume = this.masterVolume * 0.9;
-    utterance.pitch = urgency === 'high_priority' ? 1.2 : 1.0;
+    utterance.rate = 1.1; // Crisp, intelligible pacing
+    utterance.volume = Math.max(0.3, this.masterVolume * 0.95);
+    utterance.pitch = urgency === 'high_priority' ? 1.15 : 1.0;
 
-    // Cancel pending utterances to stay in real-time sync
+    // Cancel pending utterances to ensure real-time auditory synchrony
     window.speechSynthesis.cancel();
     window.speechSynthesis.speak(utterance);
   }

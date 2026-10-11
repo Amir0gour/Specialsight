@@ -19,9 +19,10 @@ const DEFAULT_SETTINGS: AudioSettings = {
   spatialMode: 'hrtf',
   sensitivityThreshold: 0.50,
   cueCooldownMs: 1600,
-  speechLabelsEnabled: false,
+  speechLabelsEnabled: true, // Enabled by default for spoken direction & distance
   hapticEnabled: true,
   soundTheme: 'gentle_acoustic',
+  distanceUnit: 'meters',
   highContrastMode: false,
   largeTextMode: false,
 };
@@ -110,6 +111,7 @@ export default function App() {
         {activeTab === 'live' && (
           <LiveDetectionView
             settings={settings}
+            updateSettings={updateSettings}
             isVisionActive={isVisionActive}
             setIsVisionActive={setIsVisionActive}
             onAudioEventTriggered={handleAudioEvent}

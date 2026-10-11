@@ -186,9 +186,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               <Mic className="w-4 h-4" />
             </div>
             <div>
-              <span className="text-sm font-semibold text-white block">Spoken Directional Labels</span>
+              <span className="text-sm font-semibold text-white block">Spoken Item & Distance Announcements</span>
               <span className="text-xs text-slate-400">
-                Speaks brief synthetic voice cues ("Person, left", "Chair, ahead") alongside 3D audio.
+                Speaks clear voice announcements with direction and distance (e.g. &ldquo;Chair ahead, about 2 meters&rdquo; or &ldquo;Person on your left, about 1 meter&rdquo;).
               </span>
             </div>
           </div>

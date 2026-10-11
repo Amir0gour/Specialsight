@@ -89,8 +89,8 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                 }}
                 className="p-3 rounded-lg border border-slate-800 hover:border-amber-500/50 text-left bg-slate-900"
               >
-                <span className="font-bold text-white block mb-0.5">Audio + Voice Labels</span>
-                <span className="text-[11px] text-slate-400">Earcons supplemented with spoken direction cues.</span>
+                <span className="font-bold text-white block mb-0.5">Audio + Spoken Distance</span>
+                <span className="text-[11px] text-slate-400">Earcons paired with spoken item name and distance (e.g. &ldquo;Chair ahead, about 2 meters&rdquo;).</span>
               </button>
             </div>
           </div>

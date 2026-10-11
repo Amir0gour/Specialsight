@@ -26,6 +26,7 @@ import { HorizontalRadar } from './HorizontalRadar';
 
 interface LiveDetectionViewProps {
   settings: AudioSettings;
+  updateSettings?: (newSettings: Partial<AudioSettings>) => void;
   isVisionActive: boolean;
   setIsVisionActive: (active: boolean) => void;
   onAudioEventTriggered: (event: SpatialAudioEvent) => void;
@@ -34,6 +35,7 @@ interface LiveDetectionViewProps {
 
 export const LiveDetectionView: React.FC<LiveDetectionViewProps> = ({
   settings,
+  updateSettings,
   isVisionActive,
   setIsVisionActive,
   onAudioEventTriggered,
@@ -150,6 +152,8 @@ export const LiveDetectionView: React.FC<LiveDetectionViewProps> = ({
         azimuthAngleDeg: Math.round(pAzimuth * 90),
         azimuthLabel: pAzimuth < -0.4 ? 'Far Left' : 'Left',
         estimatedProximityRatio: 0.55 + Math.sin(time) * 0.2,
+        approxDistanceMeters: 2.1,
+        distanceDescription: 'about 2 meters',
         urgency: 'attention',
       },
       {
@@ -162,6 +166,8 @@ export const LiveDetectionView: React.FC<LiveDetectionViewProps> = ({
         azimuthAngleDeg: Math.round(cAzimuth * 90),
         azimuthLabel: 'Center',
         estimatedProximityRatio: 0.38,
+        approxDistanceMeters: 1.8,
+        distanceDescription: 'about 2 meters',
         urgency: 'informational',
       },
       {
@@ -174,6 +180,8 @@ export const LiveDetectionView: React.FC<LiveDetectionViewProps> = ({
         azimuthAngleDeg: Math.round(dAzimuth * 90),
         azimuthLabel: 'Right',
         estimatedProximityRatio: 0.42,
+        approxDistanceMeters: 3.2,
+        distanceDescription: 'about 3 meters',
         urgency: 'informational',
       },
     ];
@@ -215,13 +223,14 @@ export const LiveDetectionView: React.FC<LiveDetectionViewProps> = ({
           lastAudioTriggerTime.current = now;
           const topThreat = detected[0];
 
-          // Trigger spatial sound
+          // Trigger spatial sound + spoken announcement ("Chair ahead, about 2 meters")
           spatialAudio.playSpatialCue(
             topThreat.category,
             topThreat.azimuth,
             topThreat.estimatedProximityRatio,
             topThreat.urgency,
-            topThreat.label
+            topThreat.label,
+            topThreat.distanceDescription
           );
 
           // Trigger haptics
@@ -238,7 +247,7 @@ export const LiveDetectionView: React.FC<LiveDetectionViewProps> = ({
           }, 450);
 
           // Screen reader accessibility announcement for high priority or changes
-          const announcement = `${topThreat.label} detected at ${topThreat.azimuthLabel}. Urgency: ${topThreat.urgency}`;
+          const announcement = `${topThreat.label} ${topThreat.azimuthLabel}, ${topThreat.distanceDescription}`;
           setScreenReaderAnnouncement(announcement);
 
           // Log event
@@ -251,8 +260,10 @@ export const LiveDetectionView: React.FC<LiveDetectionViewProps> = ({
             azimuthLabel: topThreat.azimuthLabel,
             urgency: topThreat.urgency,
             proximityRatio: topThreat.estimatedProximityRatio,
+            approxDistanceMeters: topThreat.approxDistanceMeters,
+            distanceDescription: topThreat.distanceDescription,
             source: isSimulatedFeed ? 'diagnostic' : 'camera',
-            soundDescription: `${topThreat.category} acoustic earcon panned ${topThreat.azimuthLabel}`,
+            soundDescription: `${topThreat.label} ${topThreat.azimuthLabel}, ${topThreat.distanceDescription}`,
           });
         }
       }
@@ -347,8 +358,8 @@ export const LiveDetectionView: React.FC<LiveDetectionViewProps> = ({
       ctx.lineWidth = 2.5;
       ctx.strokeRect(x, y, w, h);
 
-      // Object label tag
-      const text = `${obj.label} · ${obj.azimuthLabel} (${Math.round(obj.confidence * 100)}%)`;
+      // Object label tag with direction and distance
+      const text = `${obj.label} · ${obj.azimuthLabel} · ~${obj.approxDistanceMeters}m (${obj.distanceDescription})`;
       ctx.font = 'bold 12px "Plus Jakarta Sans", sans-serif';
       const textMetrics = ctx.measureText(text);
       const tagH = 22;
@@ -545,11 +556,17 @@ export const LiveDetectionView: React.FC<LiveDetectionViewProps> = ({
                       {primaryHazard.urgency.replace('_', ' ')}
                     </span>
                   </div>
-                  <p className="text-xs text-slate-400 mt-0.5">
-                    Positioned at{' '}
-                    <strong className="text-amber-300 font-semibold">
-                      {primaryHazard.azimuthLabel} ({primaryHazard.azimuthAngleDeg}°)
-                    </strong>
+                  <p className="text-xs text-slate-300 mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+                    <span>
+                      Direction:{' '}
+                      <strong className="text-amber-300 font-semibold">
+                        {primaryHazard.azimuthLabel} ({primaryHazard.azimuthAngleDeg}°)
+                      </strong>
+                    </span>
+                    <span className="text-slate-600">·</span>
+                    <span className="text-emerald-300 font-bold bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/30">
+                      {primaryHazard.distanceDescription} (~{primaryHazard.approxDistanceMeters}m)
+                    </span>
                   </p>
                 </div>
               </div>
@@ -557,9 +574,9 @@ export const LiveDetectionView: React.FC<LiveDetectionViewProps> = ({
               {/* Visual proximity meter */}
               <div className="w-full sm:w-48 text-right">
                 <div className="flex justify-between text-xs text-slate-400 mb-1">
-                  <span>Proximity</span>
-                  <span className="font-mono tabular-nums text-slate-200">
-                    {Math.round(primaryHazard.estimatedProximityRatio * 100)}%
+                  <span>Estimated Distance</span>
+                  <span className="font-mono tabular-nums text-emerald-400 font-bold">
+                    ~{primaryHazard.approxDistanceMeters}m
                   </span>
                 </div>
                 <div className="w-full h-2.5 bg-slate-800 rounded-full overflow-hidden">
@@ -569,7 +586,7 @@ export const LiveDetectionView: React.FC<LiveDetectionViewProps> = ({
                         ? 'bg-rose-500'
                         : primaryHazard.estimatedProximityRatio > 0.3
                         ? 'bg-amber-500'
-                        : 'bg-sky-400'
+                        : 'bg-emerald-400'
                     }`}
                     style={{ width: `${primaryHazard.estimatedProximityRatio * 100}%` }}
                   />
@@ -586,13 +603,46 @@ export const LiveDetectionView: React.FC<LiveDetectionViewProps> = ({
         {/* Quick Auditory Controls Card */}
         <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col justify-between">
           <div>
-            <span className="text-xs font-semibold text-slate-300 block mb-2">Sonic Guidance</span>
+            <span className="text-xs font-semibold text-slate-300 block mb-1">Voice & Sonic Cues</span>
             <p className="text-xs text-slate-400 mb-3">
-              Spatial engine sends gentle sonification tones balanced between left and right ears.
+              Combines item acoustic earcons with spoken direction and distance (e.g. &ldquo;Chair ahead, about 2 meters&rdquo;).
             </p>
           </div>
 
           <div className="space-y-2">
+            {updateSettings && (
+              <button
+                onClick={() => {
+                  const nextVal = !settings.speechLabelsEnabled;
+                  updateSettings({ speechLabelsEnabled: nextVal });
+                  spatialAudio.setSpeechEnabled(nextVal);
+                  if (nextVal) {
+                    if (primaryHazard) {
+                      spatialAudio.playSpatialCue(
+                        primaryHazard.category,
+                        primaryHazard.azimuth,
+                        primaryHazard.estimatedProximityRatio,
+                        primaryHazard.urgency,
+                        primaryHazard.label,
+                        primaryHazard.distanceDescription
+                      );
+                    } else {
+                      spatialAudio.testDirection(0, 'Voice enabled');
+                    }
+                  }
+                }}
+                className={`w-full py-2 px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-2 border transition-colors ${
+                  settings.speechLabelsEnabled
+                    ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 hover:bg-amber-500/30'
+                    : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-slate-200'
+                }`}
+                title="Toggle spoken announcements of item name, direction and distance"
+              >
+                <Mic className={`w-3.5 h-3.5 ${settings.speechLabelsEnabled ? 'text-amber-400' : 'text-slate-500'}`} />
+                <span>Voice Speech: {settings.speechLabelsEnabled ? 'ON (Speaking Distance)' : 'OFF'}</span>
+              </button>
+            )}
+
             <button
               onClick={() => {
                 if (primaryHazard) {
@@ -601,7 +651,8 @@ export const LiveDetectionView: React.FC<LiveDetectionViewProps> = ({
                     primaryHazard.azimuth,
                     primaryHazard.estimatedProximityRatio,
                     primaryHazard.urgency,
-                    primaryHazard.label
+                    primaryHazard.label,
+                    primaryHazard.distanceDescription
                   );
                 } else {
                   spatialAudio.testDirection(0, 'Center preview');
