@@ -98,13 +98,18 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           <input
             id="cooldown-slider"
             type="range"
-            min="800"
-            max="3500"
-            step="200"
+            min="1000"
+            max="5000"
+            step="250"
             value={settings.cueCooldownMs}
             onChange={(e) => updateSettings({ cueCooldownMs: parseInt(e.target.value, 10) })}
             className="w-full h-2.5 bg-slate-950 rounded-lg appearance-none cursor-pointer accent-amber-500"
           />
+          <div className="flex justify-between text-[11px] text-slate-500">
+            <span>Fast (1.0s)</span>
+            <span className="text-amber-400 font-semibold">Standard Default (3.0s)</span>
+            <span>Relaxed (5.0s)</span>
+          </div>
           <p className="text-[11px] text-slate-500">
             Controls minimum delay between consecutive sound cues to avoid auditory overload and sensory fatigue.
           </p>

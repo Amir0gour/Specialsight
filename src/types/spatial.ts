@@ -53,7 +53,7 @@ export interface AudioSettings {
   volume: number;              // 0.0 to 1.0
   spatialMode: SpatialAudioMode; // 'stereo' | 'hrtf'
   sensitivityThreshold: number; // 0.25 to 0.85
-  cueCooldownMs: number;       // 800ms to 4000ms
+  cueCooldownMs: number;       // 1000ms to 5000ms (default 3000ms)
   speechLabelsEnabled: boolean; // Spoken voice cues
   hapticEnabled: boolean;      // Device vibration feedback
   soundTheme: SoundTheme;

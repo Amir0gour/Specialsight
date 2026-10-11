@@ -18,7 +18,7 @@ const DEFAULT_SETTINGS: AudioSettings = {
   volume: 0.85,
   spatialMode: 'hrtf',
   sensitivityThreshold: 0.50,
-  cueCooldownMs: 1600,
+  cueCooldownMs: 3000, // 3 seconds default sonification cooldown
   speechLabelsEnabled: true, // Enabled by default for spoken direction & distance
   hapticEnabled: true,
   soundTheme: 'gentle_acoustic',
